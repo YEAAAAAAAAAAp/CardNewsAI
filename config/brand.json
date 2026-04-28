@@ -1,0 +1,21 @@
+{
+  "brand_name": "Cardnews AI Factory",
+  "persona": "1인 창업가, 지식 크리에이터, 마케팅 실무자",
+  "tone": "선명하고 실용적이며 과장 없이 설득하는 말투",
+  "promise": "주제 하나를 저장하고 공유하고 싶어지는 카드뉴스로 바꾼다",
+  "colors": {
+    "background": "#F7F3EA",
+    "ink": "#1F2933",
+    "accent": "#E85D4F",
+    "muted": "#6B7280",
+    "panel": "#FFFFFF"
+  },
+  "canvas": {
+    "width": 1080,
+    "height": 1350
+  },
+  "defaults": {
+    "slides": 8,
+    "cta": "저장해두고 다음 콘텐츠 기획 때 꺼내보세요."
+  }
+}
