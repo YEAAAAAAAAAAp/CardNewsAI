@@ -51,6 +51,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
     coreMessage: "좋은 카드뉴스는 요약이 아니라 넘김, 저장, 공유, 댓글을 설계한 흐름이다.",
     ctaStrategy: "7번에서 저장을 유도하고 8번에서 주제 댓글 또는 DM을 요청한다."
   };
+
   const slides: FactoryProject["slides"] = [
     {
       slideNumber: 1,
@@ -141,6 +142,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       approved: false
     }
   ];
+
   return {
     topic,
     brief,
