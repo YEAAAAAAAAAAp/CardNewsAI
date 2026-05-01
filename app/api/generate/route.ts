@@ -149,12 +149,13 @@ async function maybeEnhanceWithGeminiImages(project: FactoryProject, enabled: bo
   }
 
   const model = process.env.GEMINI_IMAGE_MODEL_FORCE || imageModelName(project.options.imageModel);
-  const warnings = [...project.warnings, `Image model: ${model}`];
+  const warnings = [...project.warnings];
   const slides: FactoryProject["slides"] = [];
   const targetSlides = project.options.imageScope === "hero" ? new Set([1, 7, 8]) : new Set(project.slides.map((slide) => slide.slideNumber));
+  let imageQuotaBlocked = false;
 
   for (const slide of project.slides) {
-    if (!targetSlides.has(slide.slideNumber)) {
+    if (!targetSlides.has(slide.slideNumber) || imageQuotaBlocked) {
       slides.push(slide);
       continue;
     }
@@ -163,7 +164,9 @@ async function maybeEnhanceWithGeminiImages(project: FactoryProject, enabled: bo
       const imageDataUrl = await generateGeminiImage(apiKey, model, slide.imagePrompt || fallbackImagePrompt(project, slide));
       slides.push({ ...slide, imageDataUrl });
     } catch (error) {
-      warnings.push(`Slide ${slide.slideNumber} 이미지 생성 실패: ${summarizeError(error)}`);
+      const summary = summarizeError(error);
+      warnings.push(`이미지 생성 실패: ${summary}`);
+      if (summary.includes("쿼터")) imageQuotaBlocked = true;
       slides.push(slide);
     }
   }

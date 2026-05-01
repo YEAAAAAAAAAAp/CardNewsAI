@@ -26,7 +26,7 @@ export default function HomePage() {
   const [topic, setTopic] = useState(sampleTopic);
   const [source, setSource] = useState("");
   const [options, setOptions] = useState<CardnewsOptions>(defaultOptions);
-  const [project, setProject] = useState<FactoryProject>(() => createMockProject(sampleTopic, "", "초기 샘플", defaultOptions));
+  const [project, setProject] = useState<FactoryProject>(() => createMockProject(sampleTopic, "", "", defaultOptions));
   const [selectedSlide, setSelectedSlide] = useState(1);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -36,6 +36,9 @@ export default function HomePage() {
   const activeSlide = project.slides.find((slide) => slide.slideNumber === selectedSlide) ?? project.slides[0];
   const passedChecks = project.reviewChecklist.filter((item) => item.passed).length;
   const visualCount = project.slides.filter((slide) => slide.imageDataUrl).length;
+  const visibleWarnings = project.warnings.filter(
+    (warning) => !warning.startsWith("Gemini copy generated") && !warning.startsWith("OpenAI copy generated") && !warning.startsWith("Image model:")
+  );
 
   function updateOption<K extends keyof CardnewsOptions>(key: K, value: CardnewsOptions[K]) {
     setOptions((current) => ({ ...current, [key]: value }));
@@ -239,13 +242,13 @@ export default function HomePage() {
           </details>
 
           <button className="primary" disabled={busy} onClick={generate}>
-            {busy ? "생성 중..." : "카드뉴스 설계 + 비주얼 생성"}
+            {busy ? "생성 중..." : options.imageScope === "off" ? "카드뉴스 카피 생성" : "카드뉴스 설계 + 비주얼 생성"}
           </button>
           {busy ? <div className="busy-bar" aria-hidden="true" /> : null}
           {error ? <p className="error">{error}</p> : null}
-          {project.warnings.length ? (
+          {visibleWarnings.length ? (
             <div className="warnings">
-              {project.warnings.slice(0, 3).map((warning) => (
+              {visibleWarnings.slice(0, 2).map((warning) => (
                 <p key={warning}>{warning}</p>
               ))}
             </div>

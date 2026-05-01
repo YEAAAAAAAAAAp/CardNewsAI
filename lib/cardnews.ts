@@ -68,7 +68,7 @@ export const defaultOptions: CardnewsOptions = {
   colorPalette: "오프화이트, 차콜, 코랄, 딥그린 포인트",
   extraInstructions: "한 슬라이드에는 한 가지 메시지만. 첫 장에서 답을 다 말하지 말고 넘기고 싶게 만든다.",
   imageModel: "pro",
-  imageScope: "hero"
+  imageScope: "off"
 };
 
 export function normalizeTopic(value: string) {
@@ -232,7 +232,7 @@ export function createMockProject(
       { name: "캡션 SEO", passed: true, note: "첫 문장에 주제 키워드 포함" },
       { name: "해시태그", passed: true, note: "5~12개 범위 유지" }
     ],
-    warnings: [warning]
+    warnings: warning ? [warning] : []
   };
 }
 
