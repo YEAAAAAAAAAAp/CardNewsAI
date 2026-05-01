@@ -1,18 +1,33 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { createMockProject, projectToJson, projectToMarkdown, type FactoryProject } from "@/lib/cardnews";
+import {
+  createMockProject,
+  defaultOptions,
+  projectToJson,
+  projectToMarkdown,
+  type CardnewsOptions,
+  type FactoryProject
+} from "@/lib/cardnews";
 
 const sampleTopic = "퍼스널 브랜딩이 2026년에 더 중요해지는 이유";
 const roles = ["Hook", "Setup", "Tension", "Insight", "Shift", "Proof", "Soft CTA", "Hard CTA"];
+const contentTypes = ["실무 가이드형", "문제 해결형", "관점 제안형", "체크리스트형", "세일즈 전환형"];
+const visualPresets = [
+  "프리미엄 에디토리얼, 따뜻한 종이 질감, 차분하지만 선명한 대비",
+  "미니멀 테크 SaaS, 선명한 데이터 비주얼, 차가운 배경",
+  "브랜드 매거진, 고급 라이프스타일, 여백이 큰 구성",
+  "교육 워크북, 손으로 정리한 노트, 실용적인 체크리스트",
+  "강한 주장형 포스터, 높은 대비, 대담한 오브젝트"
+];
 
 export default function HomePage() {
   const [mode, setMode] = useState<"topic" | "source">("topic");
   const [topic, setTopic] = useState(sampleTopic);
   const [source, setSource] = useState("");
-  const [project, setProject] = useState<FactoryProject>(() => createMockProject(sampleTopic, "", "초기 샘플"));
+  const [options, setOptions] = useState<CardnewsOptions>(defaultOptions);
+  const [project, setProject] = useState<FactoryProject>(() => createMockProject(sampleTopic, "", "초기 샘플", defaultOptions));
   const [selectedSlide, setSelectedSlide] = useState(1);
-  const [useGeminiImages, setUseGeminiImages] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const deckRef = useRef<HTMLDivElement>(null);
@@ -20,6 +35,11 @@ export default function HomePage() {
   const markdown = useMemo(() => projectToMarkdown(project), [project]);
   const activeSlide = project.slides.find((slide) => slide.slideNumber === selectedSlide) ?? project.slides[0];
   const passedChecks = project.reviewChecklist.filter((item) => item.passed).length;
+  const visualCount = project.slides.filter((slide) => slide.imageDataUrl).length;
+
+  function updateOption<K extends keyof CardnewsOptions>(key: K, value: CardnewsOptions[K]) {
+    setOptions((current) => ({ ...current, [key]: value }));
+  }
 
   async function generate() {
     setBusy(true);
@@ -28,7 +48,13 @@ export default function HomePage() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ topic, source, mode, useGeminiImages })
+        body: JSON.stringify({
+          topic,
+          source,
+          mode,
+          options,
+          useGeminiImages: options.imageScope !== "off"
+        })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "생성에 실패했습니다.");
@@ -62,7 +88,7 @@ export default function HomePage() {
       const dataUrl = await htmlToImage.toPng(node, {
         pixelRatio: 2,
         cacheBust: true,
-        backgroundColor: "#f5f2ea"
+        backgroundColor: "#fffdf8"
       });
       const link = document.createElement("a");
       link.href = dataUrl;
@@ -80,8 +106,9 @@ export default function HomePage() {
         </div>
         <div className="topbar-actions">
           <StatusPill label="Slides" value="8" />
+          <StatusPill label="Visuals" value={`${visualCount}/8`} />
+          <StatusPill label="Copy" value={project.sourceType === "mock" ? "Mock" : project.sourceType.toUpperCase()} />
           <StatusPill label="Review" value={`${passedChecks}/${project.reviewChecklist.length}`} />
-          <StatusPill label="Mode" value={project.warnings[0]?.includes("mock") ? "Mock" : "AI"} />
         </div>
       </header>
 
@@ -90,8 +117,8 @@ export default function HomePage() {
           <div className="panel-head">
             <span className="step">01</span>
             <div>
-              <h2>입력</h2>
-              <p>주제 또는 원문을 넣고 카드뉴스 초안을 만듭니다.</p>
+              <h2>기획 입력</h2>
+              <p>주제, 독자, 전환 목표, 비주얼 톤까지 한 번에 설계합니다.</p>
             </div>
           </div>
 
@@ -105,38 +132,108 @@ export default function HomePage() {
           </div>
 
           {mode === "topic" ? (
-            <label className="field">
-              <span>카드뉴스 주제</span>
-              <textarea value={topic} onChange={(event) => setTopic(event.target.value)} rows={4} />
-            </label>
+            <Field label="카드뉴스 주제">
+              <textarea value={topic} onChange={(event) => setTopic(event.target.value)} rows={3} />
+            </Field>
           ) : (
-            <label className="field">
-              <span>원문 자료</span>
+            <Field label="원문 자료">
               <textarea
                 value={source}
                 onChange={(event) => setSource(event.target.value)}
-                rows={11}
+                rows={8}
                 placeholder="강의 자료, 블로그 글, PDF에서 추출한 텍스트를 붙여넣으세요."
               />
-            </label>
+            </Field>
           )}
 
+          <Field label="카드뉴스 성격">
+            <div className="chip-grid">
+              {contentTypes.map((type) => (
+                <button
+                  key={type}
+                  className={options.contentType === type ? "chip active" : "chip"}
+                  onClick={() => updateOption("contentType", type)}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </Field>
+
+          <Field label="타깃 동류 집단">
+            <textarea value={options.targetAudience} onChange={(event) => updateOption("targetAudience", event.target.value)} rows={3} />
+          </Field>
+
+          <Field label="독자의 욕망">
+            <textarea value={options.readerDesire} onChange={(event) => updateOption("readerDesire", event.target.value)} rows={3} />
+          </Field>
+
+          <Field label="지금 막힌 문제">
+            <textarea value={options.painPoint} onChange={(event) => updateOption("painPoint", event.target.value)} rows={3} />
+          </Field>
+
+          <Field label="브랜드 말투">
+            <input value={options.brandVoice} onChange={(event) => updateOption("brandVoice", event.target.value)} />
+          </Field>
+
+          <Field label="CTA 목표">
+            <input value={options.ctaGoal} onChange={(event) => updateOption("ctaGoal", event.target.value)} />
+          </Field>
+
+          <Field label="배경 이미지 톤">
+            <select value={options.visualMood} onChange={(event) => updateOption("visualMood", event.target.value)}>
+              {visualPresets.map((preset) => (
+                <option key={preset} value={preset}>
+                  {preset}
+                </option>
+              ))}
+            </select>
+          </Field>
+
+          <Field label="이미지 스타일">
+            <input value={options.imageStyle} onChange={(event) => updateOption("imageStyle", event.target.value)} />
+          </Field>
+
+          <Field label="컬러 팔레트">
+            <input value={options.colorPalette} onChange={(event) => updateOption("colorPalette", event.target.value)} />
+          </Field>
+
+          <div className="model-grid">
+            <label className={options.imageModel === "pro" ? "model-card active" : "model-card"}>
+              <input type="radio" checked={options.imageModel === "pro"} onChange={() => updateOption("imageModel", "pro")} />
+              <strong>Nano Banana Pro</strong>
+              <span>고품질 실무 산출물용. 복잡한 비주얼 지시를 더 잘 따릅니다.</span>
+            </label>
+            <label className={options.imageModel === "fast" ? "model-card active" : "model-card"}>
+              <input type="radio" checked={options.imageModel === "fast"} onChange={() => updateOption("imageModel", "fast")} />
+              <strong>Nano Banana</strong>
+              <span>빠른 초안과 대량 생성용. 비용과 속도에 유리합니다.</span>
+            </label>
+          </div>
+
+          <Field label="이미지 생성 범위">
+            <select value={options.imageScope} onChange={(event) => updateOption("imageScope", event.target.value as CardnewsOptions["imageScope"])}>
+              <option value="hero">핵심 3장만 생성: 1, 7, 8번</option>
+              <option value="all">8장 전체 생성</option>
+              <option value="off">이미지 생성 끄기</option>
+            </select>
+          </Field>
+
+          <Field label="추가 지시">
+            <textarea value={options.extraInstructions} onChange={(event) => updateOption("extraInstructions", event.target.value)} rows={3} />
+          </Field>
+
           <button className="primary" disabled={busy} onClick={generate}>
-            {busy ? "생성 중..." : useGeminiImages ? "8장 카드뉴스 + AI 비주얼 생성" : "8장 카드뉴스 생성"}
+            {busy ? "생성 중..." : "카드뉴스 설계 + 비주얼 생성"}
           </button>
           {error ? <p className="error">{error}</p> : null}
-
-          <label className="toggle-row">
-            <input
-              type="checkbox"
-              checked={useGeminiImages}
-              onChange={(event) => setUseGeminiImages(event.target.checked)}
-            />
-            <span>
-              Nano Banana 비주얼 생성
-              <small>슬라이드별 상업용 배경 이미지를 생성합니다.</small>
-            </span>
-          </label>
+          {project.warnings.length ? (
+            <div className="warnings">
+              {project.warnings.slice(0, 3).map((warning) => (
+                <p key={warning}>{warning}</p>
+              ))}
+            </div>
+          ) : null}
 
           <div className="workflow">
             {roles.map((role, index) => (
@@ -152,9 +249,7 @@ export default function HomePage() {
           </div>
 
           <div className="download-grid">
-            <button onClick={() => downloadText("cardnews.json", projectToJson(project), "application/json;charset=utf-8")}>
-              JSON
-            </button>
+            <button onClick={() => downloadText("cardnews.json", projectToJson(project), "application/json;charset=utf-8")}>JSON</button>
             <button onClick={() => downloadText("slides.md", markdown)}>Markdown</button>
             <button onClick={() => downloadText("caption.md", captionText(project))}>Caption</button>
             <button onClick={exportPngs}>PNG 8장</button>
@@ -163,7 +258,7 @@ export default function HomePage() {
 
         <section className="canvas-panel">
           <div className="brief-strip">
-            <Info label="타겟" value={project.brief.targetPersona} />
+            <Info label="타깃" value={project.brief.targetPersona} />
             <Info label="앵글" value={project.brief.contentAngle} />
             <Info label="CTA" value={project.brief.ctaStrategy} />
           </div>
@@ -179,7 +274,9 @@ export default function HomePage() {
               >
                 {slide.imageDataUrl ? (
                   <div className="visual-art" style={{ backgroundImage: `url(${slide.imageDataUrl})` }} aria-hidden="true" />
-                ) : null}
+                ) : (
+                  <div className="fallback-art" aria-hidden="true" />
+                )}
                 <div className="card-top">
                   <span>{String(slide.slideNumber).padStart(2, "0")} / 08</span>
                   <span>{slide.role}</span>
@@ -206,7 +303,9 @@ export default function HomePage() {
           <section className="selected-slide">
             {activeSlide.imageDataUrl ? (
               <div className="selected-visual" style={{ backgroundImage: `url(${activeSlide.imageDataUrl})` }} aria-hidden="true" />
-            ) : null}
+            ) : (
+              <div className="selected-visual empty">이미지 없음</div>
+            )}
             <div className="mini-meta">
               <span>Slide {String(activeSlide.slideNumber).padStart(2, "0")}</span>
               <strong>{activeSlide.role}</strong>
@@ -221,6 +320,10 @@ export default function HomePage() {
               <div>
                 <dt>Trigger</dt>
                 <dd>{activeSlide.saveOrShareTrigger}</dd>
+              </div>
+              <div>
+                <dt>Image prompt</dt>
+                <dd>{activeSlide.imagePrompt || "없음"}</dd>
               </div>
             </dl>
           </section>
@@ -263,6 +366,15 @@ export default function HomePage() {
         </aside>
       </section>
     </main>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="field">
+      <span>{label}</span>
+      {children}
+    </label>
   );
 }
 
