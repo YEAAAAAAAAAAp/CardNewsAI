@@ -100,9 +100,10 @@ export default function HomePage() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div>
+        <div className="brand-block">
           <p className="eyebrow">Cardnews AI Factory</p>
           <h1>카드뉴스 자동화 공장</h1>
+          <p>주제 입력부터 8장 카피, 캡션, 검토표, PNG 추출까지 한 화면에서 완성합니다.</p>
         </div>
         <div className="topbar-actions">
           <StatusPill label="Slides" value="8" />
@@ -146,86 +147,101 @@ export default function HomePage() {
             </Field>
           )}
 
-          <Field label="카드뉴스 성격">
-            <div className="chip-grid">
-              {contentTypes.map((type) => (
-                <button
-                  key={type}
-                  className={options.contentType === type ? "chip active" : "chip"}
-                  onClick={() => updateOption("contentType", type)}
-                >
-                  {type}
-                </button>
-              ))}
+          <details className="control-section" open>
+            <summary>
+              <span>전략 설계</span>
+              <small>누구에게, 어떤 욕망을 건드릴지 정합니다.</small>
+            </summary>
+
+            <Field label="카드뉴스 성격">
+              <div className="chip-grid">
+                {contentTypes.map((type) => (
+                  <button
+                    key={type}
+                    className={options.contentType === type ? "chip active" : "chip"}
+                    onClick={() => updateOption("contentType", type)}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="타깃 동류 집단">
+              <textarea value={options.targetAudience} onChange={(event) => updateOption("targetAudience", event.target.value)} rows={3} />
+            </Field>
+
+            <Field label="독자의 욕망">
+              <textarea value={options.readerDesire} onChange={(event) => updateOption("readerDesire", event.target.value)} rows={3} />
+            </Field>
+
+            <Field label="지금 막힌 문제">
+              <textarea value={options.painPoint} onChange={(event) => updateOption("painPoint", event.target.value)} rows={3} />
+            </Field>
+
+            <Field label="브랜드 말투">
+              <input value={options.brandVoice} onChange={(event) => updateOption("brandVoice", event.target.value)} />
+            </Field>
+
+            <Field label="CTA 목표">
+              <input value={options.ctaGoal} onChange={(event) => updateOption("ctaGoal", event.target.value)} />
+            </Field>
+          </details>
+
+          <details className="control-section" open>
+            <summary>
+              <span>비주얼 / 모델</span>
+              <small>카드 배경 이미지와 생성 모델을 선택합니다.</small>
+            </summary>
+
+            <Field label="배경 이미지 톤">
+              <select value={options.visualMood} onChange={(event) => updateOption("visualMood", event.target.value)}>
+                {visualPresets.map((preset) => (
+                  <option key={preset} value={preset}>
+                    {preset}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="이미지 스타일">
+              <input value={options.imageStyle} onChange={(event) => updateOption("imageStyle", event.target.value)} />
+            </Field>
+
+            <Field label="컬러 팔레트">
+              <input value={options.colorPalette} onChange={(event) => updateOption("colorPalette", event.target.value)} />
+            </Field>
+
+            <div className="model-grid">
+              <label className={options.imageModel === "pro" ? "model-card active" : "model-card"}>
+                <input type="radio" checked={options.imageModel === "pro"} onChange={() => updateOption("imageModel", "pro")} />
+                <strong>Nano Banana Pro</strong>
+                <span>고품질 실무 산출물용. 복잡한 비주얼 지시를 더 잘 따릅니다.</span>
+              </label>
+              <label className={options.imageModel === "fast" ? "model-card active" : "model-card"}>
+                <input type="radio" checked={options.imageModel === "fast"} onChange={() => updateOption("imageModel", "fast")} />
+                <strong>Nano Banana</strong>
+                <span>빠른 초안과 대량 생성용. 비용과 속도에 유리합니다.</span>
+              </label>
             </div>
-          </Field>
 
-          <Field label="타깃 동류 집단">
-            <textarea value={options.targetAudience} onChange={(event) => updateOption("targetAudience", event.target.value)} rows={3} />
-          </Field>
+            <Field label="이미지 생성 범위">
+              <select value={options.imageScope} onChange={(event) => updateOption("imageScope", event.target.value as CardnewsOptions["imageScope"])}>
+                <option value="hero">핵심 3장만 생성: 1, 7, 8번</option>
+                <option value="all">8장 전체 생성</option>
+                <option value="off">이미지 생성 끄기</option>
+              </select>
+            </Field>
 
-          <Field label="독자의 욕망">
-            <textarea value={options.readerDesire} onChange={(event) => updateOption("readerDesire", event.target.value)} rows={3} />
-          </Field>
-
-          <Field label="지금 막힌 문제">
-            <textarea value={options.painPoint} onChange={(event) => updateOption("painPoint", event.target.value)} rows={3} />
-          </Field>
-
-          <Field label="브랜드 말투">
-            <input value={options.brandVoice} onChange={(event) => updateOption("brandVoice", event.target.value)} />
-          </Field>
-
-          <Field label="CTA 목표">
-            <input value={options.ctaGoal} onChange={(event) => updateOption("ctaGoal", event.target.value)} />
-          </Field>
-
-          <Field label="배경 이미지 톤">
-            <select value={options.visualMood} onChange={(event) => updateOption("visualMood", event.target.value)}>
-              {visualPresets.map((preset) => (
-                <option key={preset} value={preset}>
-                  {preset}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="이미지 스타일">
-            <input value={options.imageStyle} onChange={(event) => updateOption("imageStyle", event.target.value)} />
-          </Field>
-
-          <Field label="컬러 팔레트">
-            <input value={options.colorPalette} onChange={(event) => updateOption("colorPalette", event.target.value)} />
-          </Field>
-
-          <div className="model-grid">
-            <label className={options.imageModel === "pro" ? "model-card active" : "model-card"}>
-              <input type="radio" checked={options.imageModel === "pro"} onChange={() => updateOption("imageModel", "pro")} />
-              <strong>Nano Banana Pro</strong>
-              <span>고품질 실무 산출물용. 복잡한 비주얼 지시를 더 잘 따릅니다.</span>
-            </label>
-            <label className={options.imageModel === "fast" ? "model-card active" : "model-card"}>
-              <input type="radio" checked={options.imageModel === "fast"} onChange={() => updateOption("imageModel", "fast")} />
-              <strong>Nano Banana</strong>
-              <span>빠른 초안과 대량 생성용. 비용과 속도에 유리합니다.</span>
-            </label>
-          </div>
-
-          <Field label="이미지 생성 범위">
-            <select value={options.imageScope} onChange={(event) => updateOption("imageScope", event.target.value as CardnewsOptions["imageScope"])}>
-              <option value="hero">핵심 3장만 생성: 1, 7, 8번</option>
-              <option value="all">8장 전체 생성</option>
-              <option value="off">이미지 생성 끄기</option>
-            </select>
-          </Field>
-
-          <Field label="추가 지시">
-            <textarea value={options.extraInstructions} onChange={(event) => updateOption("extraInstructions", event.target.value)} rows={3} />
-          </Field>
+            <Field label="추가 지시">
+              <textarea value={options.extraInstructions} onChange={(event) => updateOption("extraInstructions", event.target.value)} rows={3} />
+            </Field>
+          </details>
 
           <button className="primary" disabled={busy} onClick={generate}>
             {busy ? "생성 중..." : "카드뉴스 설계 + 비주얼 생성"}
           </button>
+          {busy ? <div className="busy-bar" aria-hidden="true" /> : null}
           {error ? <p className="error">{error}</p> : null}
           {project.warnings.length ? (
             <div className="warnings">
@@ -257,6 +273,14 @@ export default function HomePage() {
         </aside>
 
         <section className="canvas-panel">
+          <div className="canvas-toolbar">
+            <div>
+              <span>Preview</span>
+              <strong>8-slide carousel</strong>
+            </div>
+            <p>{options.imageScope === "off" ? "이미지 생성 꺼짐" : options.imageModel === "pro" ? "Nano Banana Pro" : "Nano Banana"}</p>
+          </div>
+
           <div className="brief-strip">
             <Info label="타깃" value={project.brief.targetPersona} />
             <Info label="앵글" value={project.brief.contentAngle} />
@@ -371,10 +395,10 @@ export default function HomePage() {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <label className="field">
+    <div className="field">
       <span>{label}</span>
       {children}
-    </label>
+    </div>
   );
 }
 
