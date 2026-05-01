@@ -648,11 +648,44 @@ select:focus {
 
 .selected-slide,
 .caption-box,
-.review {
+.review,
+.refine-box {
   padding: 16px;
   border: 1px solid var(--line);
   border-radius: 12px;
   background: var(--surface-2);
+}
+
+.refine-box {
+  margin-bottom: 12px;
+  background: linear-gradient(180deg, #fffdf8, #f7f2ea);
+}
+
+.refine-box .section-title {
+  margin-bottom: 10px;
+}
+
+.refine-box select {
+  width: auto;
+  min-width: 138px;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.secondary-action {
+  width: 100%;
+  min-height: 40px;
+  margin-top: 10px;
+  border: 1px solid var(--ink);
+  border-radius: 10px;
+  background: var(--ink);
+  color: white;
+  font-weight: 900;
+}
+
+.secondary-action:disabled {
+  opacity: 0.62;
 }
 
 .selected-visual {

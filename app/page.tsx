@@ -29,6 +29,9 @@ export default function HomePage() {
   const [project, setProject] = useState<FactoryProject>(() => createMockProject(sampleTopic, "", "", defaultOptions));
   const [selectedSlide, setSelectedSlide] = useState(1);
   const [busy, setBusy] = useState(false);
+  const [refining, setRefining] = useState(false);
+  const [refineScope, setRefineScope] = useState<"selected" | "all">("selected");
+  const [refineInstruction, setRefineInstruction] = useState("1번 슬라이드 후킹을 더 강하게 만들고, 전체 톤은 실무자답게 유지해줘.");
   const [error, setError] = useState("");
   const deckRef = useRef<HTMLDivElement>(null);
 
@@ -37,7 +40,12 @@ export default function HomePage() {
   const passedChecks = project.reviewChecklist.filter((item) => item.passed).length;
   const visualCount = project.slides.filter((slide) => slide.imageDataUrl).length;
   const visibleWarnings = project.warnings.filter(
-    (warning) => !warning.startsWith("Gemini copy generated") && !warning.startsWith("OpenAI copy generated") && !warning.startsWith("Image model:")
+    (warning) =>
+      !warning.startsWith("Gemini copy generated") &&
+      !warning.startsWith("OpenAI copy generated") &&
+      !warning.startsWith("Image model:") &&
+      !warning.startsWith("Prompt refined") &&
+      !warning.includes("내장 프리미엄 배경")
   );
 
   function updateOption<K extends keyof CardnewsOptions>(key: K, value: CardnewsOptions[K]) {
@@ -67,6 +75,31 @@ export default function HomePage() {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function refineProject() {
+    if (!refineInstruction.trim()) return;
+    setRefining(true);
+    setError("");
+    try {
+      const response = await fetch("/api/refine", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=utf-8" },
+        body: JSON.stringify({
+          project,
+          instruction: refineInstruction,
+          scope: refineScope,
+          selectedSlide
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "다듬기에 실패했습니다.");
+      setProject(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setRefining(false);
     }
   }
 
@@ -326,6 +359,20 @@ export default function HomePage() {
               <p>선택한 슬라이드와 게시 전 체크를 확인합니다.</p>
             </div>
           </div>
+
+          <section className="refine-box">
+            <div className="section-title">
+              <h3>프롬프트로 다듬기</h3>
+              <select value={refineScope} onChange={(event) => setRefineScope(event.target.value as "selected" | "all")}>
+                <option value="selected">선택 슬라이드</option>
+                <option value="all">전체 카드뉴스</option>
+              </select>
+            </div>
+            <textarea value={refineInstruction} onChange={(event) => setRefineInstruction(event.target.value)} rows={4} />
+            <button className="secondary-action" disabled={refining} onClick={refineProject}>
+              {refining ? "다듬는 중..." : "현재 결과 다듬기"}
+            </button>
+          </section>
 
           <section className="selected-slide">
             {activeSlide.imageDataUrl ? (

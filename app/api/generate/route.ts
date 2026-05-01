@@ -142,39 +142,44 @@ async function maybeEnhanceWithGeminiImages(project: FactoryProject, enabled: bo
   const apiKey = process.env.GEMINI_API_KEY;
   if (!enabled) return project;
   if (!apiKey) {
-    return {
-      ...project,
-      warnings: [...project.warnings, "GEMINI_API_KEY가 없어 기본 카드 디자인으로 생성했습니다."]
-    };
+    return applyFallbackImages(project, "GEMINI_API_KEY가 없어 내장 프리미엄 배경으로 모든 슬라이드를 완성했습니다.");
   }
 
   const model = process.env.GEMINI_IMAGE_MODEL_FORCE || imageModelName(project.options.imageModel);
   const warnings = [...project.warnings];
-  const slides: FactoryProject["slides"] = [];
   const targetSlides = project.options.imageScope === "hero" ? new Set([1, 7, 8]) : new Set(project.slides.map((slide) => slide.slideNumber));
-  let imageQuotaBlocked = false;
+  let fallbackNoticeAdded = false;
+  const slides = await Promise.all(
+    project.slides.map(async (slide) => {
+      if (!targetSlides.has(slide.slideNumber)) return slide;
 
-  for (const slide of project.slides) {
-    if (!targetSlides.has(slide.slideNumber) || imageQuotaBlocked) {
-      slides.push(slide);
-      continue;
-    }
-
-    try {
-      const imageDataUrl = await generateGeminiImage(apiKey, model, slide.imagePrompt || fallbackImagePrompt(project, slide));
-      slides.push({ ...slide, imageDataUrl });
-    } catch (error) {
-      const summary = summarizeError(error);
-      warnings.push(`이미지 생성 실패: ${summary}`);
-      if (summary.includes("쿼터")) imageQuotaBlocked = true;
-      slides.push(slide);
-    }
-  }
+      try {
+        const imageDataUrl = await generateGeminiImage(apiKey, model, slide.imagePrompt || fallbackImagePrompt(project, slide));
+        return { ...slide, imageDataUrl };
+      } catch (error) {
+        const summary = summarizeError(error);
+        if (!fallbackNoticeAdded) {
+          warnings.push(`${summary} 내장 프리미엄 배경으로 모든 슬라이드를 완성했습니다.`);
+          fallbackNoticeAdded = true;
+        }
+        return { ...slide, imageDataUrl: generateFallbackCardImage(project, slide) };
+      }
+    })
+  );
 
   return {
     ...project,
     slides,
     warnings: [...new Set(warnings)]
+  };
+}
+
+function applyFallbackImages(project: FactoryProject, notice: string): FactoryProject {
+  const targetSlides = project.options.imageScope === "hero" ? new Set([1, 7, 8]) : new Set(project.slides.map((slide) => slide.slideNumber));
+  return {
+    ...project,
+    slides: project.slides.map((slide) => (targetSlides.has(slide.slideNumber) ? { ...slide, imageDataUrl: generateFallbackCardImage(project, slide) } : slide)),
+    warnings: [...new Set([...project.warnings, notice])]
   };
 }
 
@@ -273,6 +278,59 @@ function fallbackImagePrompt(project: FactoryProject, slide: FactoryProject["sli
     "No readable text, no letters, no numbers, no logos, no watermark.",
     "Leave generous negative space for Korean headline overlay."
   ].join(" ");
+}
+
+function generateFallbackCardImage(project: FactoryProject, slide: FactoryProject["slides"][number]) {
+  const palette = fallbackPalette(slide.slideNumber);
+  const role = escapeXml(slide.role);
+  const topic = escapeXml(project.topic.slice(0, 42));
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1080" viewBox="0 0 1080 1080">
+  <defs>
+    <linearGradient id="paper" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="${palette.paper1}"/>
+      <stop offset="100%" stop-color="${palette.paper2}"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="22%" cy="18%" r="58%">
+      <stop offset="0%" stop-color="${palette.accent}" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="${palette.accent}" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grain" width="42" height="42" patternUnits="userSpaceOnUse">
+      <path d="M0 42L42 0" stroke="${palette.ink}" stroke-opacity="0.045" stroke-width="1"/>
+      <circle cx="7" cy="9" r="1.1" fill="${palette.ink}" fill-opacity="0.05"/>
+    </pattern>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="22" stdDeviation="32" flood-color="${palette.ink}" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="1080" height="1080" fill="url(#paper)"/>
+  <rect width="1080" height="1080" fill="url(#grain)"/>
+  <rect width="1080" height="1080" fill="url(#glow)"/>
+  <circle cx="880" cy="188" r="116" fill="#fffdf8" fill-opacity="0.52" stroke="${palette.ink}" stroke-opacity="0.07"/>
+  <circle cx="930" cy="246" r="44" fill="${palette.green}" fill-opacity="0.12"/>
+  <rect x="70" y="742" width="374" height="150" rx="36" fill="#fffdf8" fill-opacity="0.44" filter="url(#softShadow)"/>
+  <rect x="72" y="744" width="370" height="146" rx="34" fill="none" stroke="${palette.ink}" stroke-opacity="0.07"/>
+  <path d="M634 760 C728 690 820 702 922 632" fill="none" stroke="${palette.accent}" stroke-width="18" stroke-linecap="round" stroke-opacity="0.16"/>
+  <path d="M662 824 C742 774 836 786 946 716" fill="none" stroke="${palette.green}" stroke-width="12" stroke-linecap="round" stroke-opacity="0.14"/>
+  <text x="72" y="82" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="800" fill="${palette.accent}" opacity="0.58">${role}</text>
+  <text x="72" y="122" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700" fill="${palette.ink}" opacity="0.18">${topic}</text>
+</svg>`.trim();
+
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function fallbackPalette(index: number) {
+  const palettes = [
+    { paper1: "#fffdf8", paper2: "#f5ecdf", ink: "#20252c", accent: "#f45745", green: "#1f5b50" },
+    { paper1: "#fbfbf8", paper2: "#eaf0ec", ink: "#20252c", accent: "#2f7f6f", green: "#f0bd63" },
+    { paper1: "#fffaf2", paper2: "#f1e7d8", ink: "#26242a", accent: "#da6a44", green: "#3e675c" },
+    { paper1: "#f8fbff", paper2: "#e8edf5", ink: "#20252c", accent: "#4a6fd6", green: "#1f5b50" }
+  ];
+  return palettes[(index - 1) % palettes.length];
+}
+
+function escapeXml(value: string) {
+  return value.replace(/[<>&'"]/g, (char) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", "'": "&apos;", '"': "&quot;" }[char] || char));
 }
 
 function cleanJson(value: string) {
