@@ -16,6 +16,8 @@ export type FactoryProject = {
     headline: string;
     body: string;
     visualDirection: string;
+    imagePrompt?: string;
+    imageDataUrl?: string;
     openLoop: string;
     saveOrShareTrigger: string;
     hasCta: boolean;
@@ -59,6 +61,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: `${topic}, 첫 장에서 갈립니다`,
       body: "사람들은 좋은 정보를 기다리지 않습니다.\n자기 이야기라고 느낄 때만 다음 장을 넘깁니다.",
       visualDirection: "큰 제목과 강한 대비",
+      imagePrompt: visualPrompt(topic, "bold opening hook, dramatic contrast, confident creator brand"),
       openLoop: "첫 장에 무엇을 넣어야 하는지 궁금하게 만든다.",
       saveOrShareTrigger: "공감형 후킹",
       hasCta: false,
@@ -70,6 +73,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: "왜 지금 중요할까",
       body: "콘텐츠가 많아질수록 사람들은 더 빨리 거릅니다.\n이제 설명보다 선택받는 구조가 먼저입니다.",
       visualDirection: "정보 과잉과 선택 구조 비교",
+      imagePrompt: visualPrompt(topic, "information overload, curated signal, clean desk, strategy board"),
       openLoop: "선택받지 못하는 콘텐츠의 공통점을 예고한다.",
       saveOrShareTrigger: "현재 문제를 선명하게 보여줌",
       hasCta: false,
@@ -81,6 +85,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: "대부분 여기서 막힙니다",
       body: "열심히 요약하고 예쁘게 디자인합니다.\n하지만 독자의 욕망을 건드리지 못하면 저장도 공유도 일어나지 않습니다.",
       visualDirection: "요약 중심 vs 욕망 중심",
+      imagePrompt: visualPrompt(topic, "split composition, messy notes versus clear audience desire map"),
       openLoop: "무엇을 먼저 설계해야 하는지 연결한다.",
       saveOrShareTrigger: "실패 원인 진단",
       hasCta: false,
@@ -92,6 +97,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: "PDA로 먼저 잡으세요",
       body: "Persona: 누구에게 말하는가\nDesire: 무엇을 원하는가\nAwareness: 문제를 얼마나 아는가",
       visualDirection: "PDA 3분할 다이어그램",
+      imagePrompt: visualPrompt(topic, "three part persona desire awareness framework, premium editorial diagram"),
       openLoop: "이 기준이 카피를 어떻게 바꾸는지 예고한다.",
       saveOrShareTrigger: "템플릿형 저장 포인트",
       hasCta: false,
@@ -103,6 +109,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: "관점을 바꾸면 보입니다",
       body: "카드뉴스는 내용을 줄이는 작업이 아닙니다.\n독자가 되고 싶은 모습으로 초대하는 설계입니다.",
       visualDirection: "Before/After 전환",
+      imagePrompt: visualPrompt(topic, "perspective shift, before after transformation, creator insight moment"),
       openLoop: "저장되는 구조의 공통점으로 넘긴다.",
       saveOrShareTrigger: "아하 모먼트",
       hasCta: false,
@@ -114,6 +121,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: "저장되는 카드의 공통점",
       body: "체크리스트, 단계별 가이드, 결정 기준.\n이 셋 중 하나가 있으면 사람들은 나중에 다시 보려고 저장합니다.",
       visualDirection: "체크리스트 UI",
+      imagePrompt: visualPrompt(topic, "saveable checklist, tactile paper, refined productivity system"),
       openLoop: "바로 저장하게 만드는 마지막 기준으로 연결한다.",
       saveOrShareTrigger: "체크리스트",
       hasCta: false,
@@ -125,6 +133,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: "이 기준만 저장하세요",
       body: "다음 기획 전에 3가지만 적어보세요.\n누구에게 말하나?\n무엇을 원하나?\n왜 지금 봐야 하나?",
       visualDirection: "저장용 미니 템플릿",
+      imagePrompt: visualPrompt(topic, "minimal checklist template, bookmark gesture, useful reference card"),
       openLoop: "오늘 바로 할 행동으로 이어진다.",
       saveOrShareTrigger: "명시적 저장 유도",
       hasCta: true,
@@ -136,6 +145,7 @@ export function createMockProject(topicInput: string, source = "", warning = "mo
       headline: "당신의 주제는 무엇인가요?",
       body: "댓글에 카드뉴스로 만들고 싶은 주제 1개를 남겨주세요.\n가장 막히는 지점부터 후킹 문장을 잡아보겠습니다.",
       visualDirection: "댓글 입력창과 CTA",
+      imagePrompt: visualPrompt(topic, "conversation prompt, community comments, clear call to action"),
       openLoop: "댓글, DM, 다음 콘텐츠로 연결",
       saveOrShareTrigger: "구체적인 댓글 CTA",
       hasCta: true,
@@ -214,4 +224,15 @@ function buildHashtags(topic: string) {
   const words = topic.match(/[0-9A-Za-z가-힣]{2,}/g) || [];
   const tags = [...words.slice(0, 3), "카드뉴스", "콘텐츠기획", "퍼스널브랜딩", "인스타그램마케팅", "AI자동화"];
   return [...new Set(tags)].slice(0, 10).map((tag) => `#${tag}`);
+}
+
+function visualPrompt(topic: string, direction: string) {
+  return [
+    "Square Instagram cardnews visual background, premium Korean creator economy editorial style.",
+    `Topic: ${topic}.`,
+    `Scene direction: ${direction}.`,
+    "No readable text, no letters, no logos, no watermark.",
+    "Clean composition with generous negative space for Korean headline overlay.",
+    "Warm off-white paper, charcoal ink, coral accent, subtle green detail, realistic but polished."
+  ].join(" ");
 }

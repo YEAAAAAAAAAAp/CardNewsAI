@@ -12,6 +12,7 @@ export default function HomePage() {
   const [source, setSource] = useState("");
   const [project, setProject] = useState<FactoryProject>(() => createMockProject(sampleTopic, "", "초기 샘플"));
   const [selectedSlide, setSelectedSlide] = useState(1);
+  const [useGeminiImages, setUseGeminiImages] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const deckRef = useRef<HTMLDivElement>(null);
@@ -27,7 +28,7 @@ export default function HomePage() {
       const response = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json; charset=utf-8" },
-        body: JSON.stringify({ topic, source, mode })
+        body: JSON.stringify({ topic, source, mode, useGeminiImages })
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "생성에 실패했습니다.");
@@ -121,9 +122,21 @@ export default function HomePage() {
           )}
 
           <button className="primary" disabled={busy} onClick={generate}>
-            {busy ? "생성 중..." : "8장 카드뉴스 생성"}
+            {busy ? "생성 중..." : useGeminiImages ? "8장 카드뉴스 + AI 비주얼 생성" : "8장 카드뉴스 생성"}
           </button>
           {error ? <p className="error">{error}</p> : null}
+
+          <label className="toggle-row">
+            <input
+              type="checkbox"
+              checked={useGeminiImages}
+              onChange={(event) => setUseGeminiImages(event.target.checked)}
+            />
+            <span>
+              Nano Banana 비주얼 생성
+              <small>슬라이드별 상업용 배경 이미지를 생성합니다.</small>
+            </span>
+          </label>
 
           <div className="workflow">
             {roles.map((role, index) => (
@@ -164,6 +177,9 @@ export default function HomePage() {
                 key={slide.slideNumber}
                 onClick={() => setSelectedSlide(slide.slideNumber)}
               >
+                {slide.imageDataUrl ? (
+                  <div className="visual-art" style={{ backgroundImage: `url(${slide.imageDataUrl})` }} aria-hidden="true" />
+                ) : null}
                 <div className="card-top">
                   <span>{String(slide.slideNumber).padStart(2, "0")} / 08</span>
                   <span>{slide.role}</span>
@@ -188,6 +204,9 @@ export default function HomePage() {
           </div>
 
           <section className="selected-slide">
+            {activeSlide.imageDataUrl ? (
+              <div className="selected-visual" style={{ backgroundImage: `url(${activeSlide.imageDataUrl})` }} aria-hidden="true" />
+            ) : null}
             <div className="mini-meta">
               <span>Slide {String(activeSlide.slideNumber).padStart(2, "0")}</span>
               <strong>{activeSlide.role}</strong>
