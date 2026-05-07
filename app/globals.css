@@ -213,6 +213,14 @@ h1 {
   font-weight: 850;
 }
 
+.field-help {
+  margin: -2px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
 textarea,
 input,
 select {
@@ -298,6 +306,46 @@ select:focus {
   grid-template-columns: 1fr 1fr;
   gap: 10px;
   margin: 6px 0 14px;
+}
+
+.reliability-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.reliability-card {
+  display: grid;
+  gap: 5px;
+  min-height: 72px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: white;
+  color: var(--ink);
+  text-align: left;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.reliability-card:hover {
+  transform: translateY(-1px);
+  border-color: #bfb3a3;
+}
+
+.reliability-card.active {
+  border-color: var(--ink);
+  background: #f1eee7;
+}
+
+.reliability-card strong {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.reliability-card span {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+  line-height: 1.4;
 }
 
 .model-card {

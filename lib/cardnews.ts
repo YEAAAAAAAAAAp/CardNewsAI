@@ -13,6 +13,19 @@ export type CardnewsOptions = {
   extraInstructions: string;
   imageModel: "fast" | "pro";
   imageScope: "off" | "hero" | "all";
+  imageReliability: "persistent" | "balanced" | "fast";
+};
+
+export type ContentTypePreset = {
+  id: string;
+  label: string;
+  description: string;
+  options: Pick<
+    CardnewsOptions,
+    "contentType" | "targetAudience" | "readerDesire" | "painPoint" | "brandVoice" | "ctaGoal" | "visualMood" | "imageStyle" | "colorPalette" | "extraInstructions"
+  >;
+  promptRules: string[];
+  visualKeywords: string[];
 };
 
 export type FactoryProject = {
@@ -68,8 +81,111 @@ export const defaultOptions: CardnewsOptions = {
   colorPalette: "오프화이트, 차콜, 코랄, 딥그린 포인트",
   extraInstructions: "한 슬라이드에는 한 가지 메시지만. 첫 장에서 답을 다 말하지 말고 넘기고 싶게 만든다.",
   imageModel: "pro",
-  imageScope: "all"
+  imageScope: "all",
+  imageReliability: "persistent"
 };
+
+export const contentTypePresets: ContentTypePreset[] = [
+  {
+    id: "practical-guide",
+    label: "실무 가이드형",
+    description: "바로 따라 할 단계, 기준, 템플릿을 제공해 저장을 유도합니다.",
+    options: {
+      contentType: "실무 가이드형",
+      targetAudience: "혼자 콘텐츠를 만들지만 저장과 공유가 잘 나오지 않아 고민하는 1인 창업가, 지식 크리에이터, 퍼스널 브랜더",
+      readerDesire: "지금 바로 적용할 수 있는 카드뉴스 설계법을 얻고 싶다.",
+      painPoint: "좋은 주제는 있는데 첫 장, 흐름, CTA를 매번 새로 고민한다.",
+      brandVoice: "명확하고 실무적인 한국어. 과장 없이 바로 써먹을 수 있게.",
+      ctaGoal: "저장 후 다음 기획 때 다시 보게 만들고, 댓글에 적용할 주제 1개를 남기게 유도",
+      visualMood: "프리미엄 에디토리얼, 따뜻한 종이 질감, 차분하지만 선명한 대비",
+      imageStyle: "인물 없는 오브젝트 중심의 실사풍 배경, 텍스트가 올라갈 여백 확보",
+      colorPalette: "오프화이트, 차콜, 코랄, 딥그린 포인트",
+      extraInstructions: "체크리스트, 순서, 판단 기준을 반드시 포함한다. 한 슬라이드에는 한 가지 실행 포인트만 담는다."
+    },
+    promptRules: ["단계별 실행 흐름을 만든다", "Slide 6 또는 7에 저장용 체크리스트를 넣는다", "모호한 조언 대신 판단 기준을 쓴다"],
+    visualKeywords: ["editorial desk", "paper guide", "checklist", "premium workbook"]
+  },
+  {
+    id: "problem-solving",
+    label: "문제 해결형",
+    description: "독자의 막힘을 선명하게 진단하고 원인과 해결책을 제시합니다.",
+    options: {
+      contentType: "문제 해결형",
+      targetAudience: "계속 시도하지만 결과가 안 나오는 이유를 찾고 싶은 실무자와 크리에이터",
+      readerDesire: "내가 어디서 막히는지 알고, 바로 고칠 수 있는 해결책을 원한다.",
+      painPoint: "열심히 만들지만 저장, 공유, 문의로 이어지지 않는 이유를 모른다.",
+      brandVoice: "문제를 정확히 짚되 공격적이지 않은 코치 톤.",
+      ctaGoal: "자신의 막힌 지점을 댓글로 남기게 유도",
+      visualMood: "문제와 해결이 대비되는 명료한 구성, 선명한 포인트 컬러",
+      imageStyle: "Before/After 구도가 느껴지는 추상적 실사 배경, 명확한 여백",
+      colorPalette: "오프화이트, 차콜, 블루그레이, 코랄 포인트",
+      extraInstructions: "Slide 3에서 핵심 갈등을 강하게 만들고, Slide 5에서 관점 전환을 선명하게 보여준다."
+    },
+    promptRules: ["증상을 먼저 말하고 원인을 뒤에 밝힌다", "독자가 자기 문제라고 느낄 문장을 쓴다", "해결책은 하나의 우선순위로 좁힌다"],
+    visualKeywords: ["diagnosis", "before after", "clear path", "problem solving"]
+  },
+  {
+    id: "point-of-view",
+    label: "관점 제안형",
+    description: "익숙한 믿음을 뒤집어 저장보다 공유와 토론을 유도합니다.",
+    options: {
+      contentType: "관점 제안형",
+      targetAudience: "남들과 비슷한 정보보다 자신만의 해석과 세계관을 만들고 싶은 퍼스널 브랜더",
+      readerDesire: "내 생각을 더 선명하게 만들고, 공유하고 싶은 관점을 얻고 싶다.",
+      painPoint: "정보는 많지만 내 콘텐츠만의 주장과 색깔이 약하다.",
+      brandVoice: "대담하지만 근거 있는 에디토리얼 톤.",
+      ctaGoal: "동의/반대 의견을 구체적으로 댓글에 남기게 유도",
+      visualMood: "브랜드 매거진, 고급 라이프스타일, 여백이 큰 구성",
+      imageStyle: "상징적 오브젝트와 강한 구도, 텍스트 없는 매거진 커버형 배경",
+      colorPalette: "아이보리, 먹색, 딥레드, 올리브 포인트",
+      extraInstructions: "첫 장은 대담한 주장으로 시작하고, Slide 4에서 독자가 몰랐던 진짜 이유를 제시한다."
+    },
+    promptRules: ["상식에 반대하거나 재정의하는 문장으로 시작한다", "근거 없는 선동이 아니라 해석의 이유를 준다", "댓글 질문은 찬반이 갈리게 구체화한다"],
+    visualKeywords: ["editorial manifesto", "bold composition", "symbolic object", "magazine cover"]
+  },
+  {
+    id: "checklist",
+    label: "체크리스트형",
+    description: "나중에 다시 보게 만드는 기준표, 질문, 점검표 중심입니다.",
+    options: {
+      contentType: "체크리스트형",
+      targetAudience: "콘텐츠를 만들기 전 빠르게 점검할 기준이 필요한 마케터와 창업가",
+      readerDesire: "실수하지 않도록 저장해두고 반복해서 볼 기준표가 필요하다.",
+      painPoint: "매번 감으로 판단해서 결과물 품질이 흔들린다.",
+      brandVoice: "간결하고 정리된 운영 매뉴얼 톤.",
+      ctaGoal: "저장 후 다음 작업 전 체크하게 만들기",
+      visualMood: "교육 워크북, 손으로 정리한 노트, 실용적인 체크리스트",
+      imageStyle: "정리된 종이, 플래너, 체크박스가 연상되는 깔끔한 배경",
+      colorPalette: "오프화이트, 차콜, 세이지그린, 옐로 포인트",
+      extraInstructions: "Slide 4~7은 질문, 기준, 체크 항목 위주로 구성한다. 각 항목은 짧고 명확해야 한다."
+    },
+    promptRules: ["각 슬라이드 제목은 체크 질문처럼 쓴다", "Slide 7은 저장용 최종 체크리스트로 만든다", "추상어보다 확인 가능한 기준을 쓴다"],
+    visualKeywords: ["checklist sheet", "planner", "organized desk", "reference card"]
+  },
+  {
+    id: "sales-conversion",
+    label: "세일즈 전환형",
+    description: "공감에서 신뢰, 행동으로 이어지는 DM/문의 전환 구조입니다.",
+    options: {
+      contentType: "세일즈 전환형",
+      targetAudience: "관심은 있지만 아직 구매나 문의로 움직이지 않는 잠재 고객",
+      readerDesire: "내 상황에 맞는 해결책인지 판단하고 부담 없이 다음 행동을 하고 싶다.",
+      painPoint: "좋다는 건 알지만 지금 문의해야 할 이유가 선명하지 않다.",
+      brandVoice: "압박 없이 신뢰를 쌓는 컨설턴트 톤.",
+      ctaGoal: "댓글보다 DM, 상담, 무료 자료 요청으로 전환",
+      visualMood: "강한 주장형 포스터, 높은 대비, 대담한 오브젝트",
+      imageStyle: "프리미엄 서비스 제안서 느낌의 추상 배경, 고급스럽고 신뢰감 있는 구성",
+      colorPalette: "차콜, 크림, 딥그린, 코랄 포인트",
+      extraInstructions: "불안 조장보다 선택 기준을 제공한다. Slide 8 CTA는 구체적인 DM 문구 하나로 끝낸다."
+    },
+    promptRules: ["독자의 현재 상황을 인정한 뒤 선택 기준을 제시한다", "Proof 슬라이드에는 비교, 사례, 신뢰 근거를 넣는다", "CTA는 부담 낮은 DM 문구로 구체화한다"],
+    visualKeywords: ["premium proposal", "trust signal", "consulting deck", "conversion"]
+  }
+];
+
+export function findContentTypePreset(contentType: string) {
+  return contentTypePresets.find((preset) => preset.options.contentType === contentType || preset.label === contentType) || contentTypePresets[0];
+}
 
 export function normalizeTopic(value: string) {
   return value.replace(/\s+/g, " ").trim();
@@ -283,11 +399,13 @@ function buildHashtags(topic: string) {
 }
 
 function visualPrompt(topic: string, options: CardnewsOptions, direction: string) {
+  const preset = findContentTypePreset(options.contentType);
   return [
     "Create a square 1:1 premium Instagram carousel background for Korean cardnews.",
     `Topic: ${topic}.`,
     `Content type: ${options.contentType}. Audience: ${options.targetAudience}.`,
     `Scene direction: ${direction}.`,
+    `Category visual keywords: ${preset.visualKeywords.join(", ")}.`,
     `Mood: ${options.visualMood}. Image style: ${options.imageStyle}.`,
     `Color palette: ${options.colorPalette}.`,
     "No readable text, no letters, no numbers, no logos, no watermark.",

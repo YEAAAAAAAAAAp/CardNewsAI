@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { createMockProject, type FactoryProject } from "@/lib/cardnews";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 type RefineBody = {
   project?: FactoryProject;
@@ -44,7 +44,7 @@ async function refineWithAvailableModel(project: FactoryProject, instruction: st
         { role: "user", content: buildRefinePrompt(project, instruction, scope, selectedSlide) }
       ]
     });
-    return JSON.parse(cleanJson(response.choices[0]?.message?.content || "{}")) as FactoryProject;
+    return parseGeneratedProject(response.choices[0]?.message?.content || "{}");
   }
 
   if (process.env.GEMINI_API_KEY) {
@@ -55,7 +55,7 @@ async function refineWithAvailableModel(project: FactoryProject, instruction: st
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
           method: "POST",
           headers: { "Content-Type": "application/json", "x-goog-api-key": process.env.GEMINI_API_KEY || "" },
-          signal: AbortSignal.timeout(18000),
+          signal: AbortSignal.timeout(90000),
           body: JSON.stringify({
             contents: [{ role: "user", parts: [{ text: `${refineSystemPrompt}\n\n${buildRefinePrompt(project, instruction, scope, selectedSlide)}` }] }],
             generationConfig: {
@@ -71,7 +71,7 @@ async function refineWithAvailableModel(project: FactoryProject, instruction: st
         }
 
         const data = await response.json();
-        return JSON.parse(cleanJson(data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}")) as FactoryProject;
+        return parseGeneratedProject(data?.candidates?.[0]?.content?.parts?.[0]?.text || "{}");
       } catch (error) {
         errors.push(`${model}: ${summarizeError(error)}`);
       }
@@ -88,7 +88,8 @@ const refineSystemPrompt = [
   "반드시 8슬라이드 구조와 기존 JSON 스키마를 유지한다.",
   "이미지 data URL은 수정하지 말고 유지한다.",
   "각 슬라이드는 한 가지 메시지만 담고, 첫 장은 넘기고 싶게 만든다.",
-  "JSON만 반환한다. 마크다운 코드블록은 쓰지 않는다."
+  "JSON만 반환한다. 마크다운 코드블록, 설명문, 후속 코멘트는 절대 쓰지 않는다.",
+  "JSON이 길어도 마지막 중괄호까지 완전한 객체로 닫아서 반환한다."
 ].join("\n");
 
 function buildRefinePrompt(project: FactoryProject, instruction: string, scope: "selected" | "all", selectedSlide: number) {
@@ -150,6 +151,55 @@ function localRefine(project: FactoryProject, instruction: string, scope: "selec
 
 function cleanJson(value: string) {
   return value.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
+}
+
+function parseGeneratedProject(value: string): FactoryProject {
+  const cleaned = cleanJson(value);
+  try {
+    return JSON.parse(cleaned) as FactoryProject;
+  } catch {
+    return JSON.parse(extractFirstJsonObject(cleaned)) as FactoryProject;
+  }
+}
+
+function extractFirstJsonObject(value: string) {
+  const start = value.indexOf("{");
+  if (start < 0) throw new Error("JSON 객체를 찾지 못했습니다.");
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = start; index < value.length; index += 1) {
+    const char = value[index];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) continue;
+    if (char === "{") depth += 1;
+    if (char === "}") depth -= 1;
+
+    if (depth === 0) {
+      return value.slice(start, index + 1);
+    }
+  }
+
+  const end = value.lastIndexOf("}");
+  if (end > start) return value.slice(start, end + 1);
+  throw new Error("완전한 JSON 객체를 찾지 못했습니다.");
 }
 
 function summarizeError(error: unknown) {

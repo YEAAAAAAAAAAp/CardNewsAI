@@ -3,6 +3,7 @@
 import { useMemo, useRef, useState } from "react";
 import {
   createMockProject,
+  contentTypePresets,
   defaultOptions,
   projectToJson,
   projectToMarkdown,
@@ -12,13 +13,33 @@ import {
 
 const sampleTopic = "퍼스널 브랜딩이 2026년에 더 중요해지는 이유";
 const roles = ["Hook", "Setup", "Tension", "Insight", "Shift", "Proof", "Soft CTA", "Hard CTA"];
-const contentTypes = ["실무 가이드형", "문제 해결형", "관점 제안형", "체크리스트형", "세일즈 전환형"];
 const visualPresets = [
   "프리미엄 에디토리얼, 따뜻한 종이 질감, 차분하지만 선명한 대비",
   "미니멀 테크 SaaS, 선명한 데이터 비주얼, 차가운 배경",
   "브랜드 매거진, 고급 라이프스타일, 여백이 큰 구성",
   "교육 워크북, 손으로 정리한 노트, 실용적인 체크리스트",
   "강한 주장형 포스터, 높은 대비, 대담한 오브젝트"
+];
+const reliabilityModes: Array<{
+  id: CardnewsOptions["imageReliability"];
+  title: string;
+  description: string;
+}> = [
+  {
+    id: "persistent",
+    title: "품질 우선",
+    description: "느리지만 순차 처리, 모델 전환, 추가 재시도로 실제 이미지 성공률을 가장 높입니다."
+  },
+  {
+    id: "balanced",
+    title: "균형",
+    description: "속도와 안정성을 함께 봅니다. 일반적인 대량 제작에 적합합니다."
+  },
+  {
+    id: "fast",
+    title: "빠른 초안",
+    description: "초안 확인용입니다. 실패 시 프리미엄 fallback으로 빠르게 완성합니다."
+  }
 ];
 
 export default function HomePage() {
@@ -47,9 +68,22 @@ export default function HomePage() {
       !warning.startsWith("Prompt refined") &&
       !warning.includes("내장 프리미엄 배경")
   );
+  const imagePipelineNote =
+    options.imageReliability === "persistent"
+      ? "품질 우선 모드는 오래 걸려도 실제 이미지 생성을 최대한 끝까지 시도합니다."
+      : options.imageReliability === "balanced"
+        ? "균형 모드는 속도와 성공률을 함께 조절합니다."
+        : "빠른 초안 모드는 속도를 우선합니다.";
 
   function updateOption<K extends keyof CardnewsOptions>(key: K, value: CardnewsOptions[K]) {
     setOptions((current) => ({ ...current, [key]: value }));
+  }
+
+  function applyContentPreset(preset: (typeof contentTypePresets)[number]) {
+    setOptions((current) => ({
+      ...current,
+      ...preset.options
+    }));
   }
 
   async function generate() {
@@ -191,16 +225,20 @@ export default function HomePage() {
 
             <Field label="카드뉴스 성격">
               <div className="chip-grid">
-                {contentTypes.map((type) => (
+                {contentTypePresets.map((preset) => (
                   <button
-                    key={type}
-                    className={options.contentType === type ? "chip active" : "chip"}
-                    onClick={() => updateOption("contentType", type)}
+                    key={preset.id}
+                    className={options.contentType === preset.options.contentType ? "chip active" : "chip"}
+                    onClick={() => applyContentPreset(preset)}
+                    title={preset.description}
                   >
-                    {type}
+                    {preset.label}
                   </button>
                 ))}
               </div>
+              <p className="field-help">
+                {contentTypePresets.find((preset) => preset.options.contentType === options.contentType)?.description}
+              </p>
             </Field>
 
             <Field label="타깃 동류 집단">
@@ -260,6 +298,22 @@ export default function HomePage() {
                 <span>빠른 초안과 대량 생성용. 비용과 속도에 유리합니다.</span>
               </label>
             </div>
+
+            <Field label="이미지 생성 안정성">
+              <div className="reliability-grid">
+                {reliabilityModes.map((mode) => (
+                  <button
+                    key={mode.id}
+                    className={options.imageReliability === mode.id ? "reliability-card active" : "reliability-card"}
+                    onClick={() => updateOption("imageReliability", mode.id)}
+                  >
+                    <strong>{mode.title}</strong>
+                    <span>{mode.description}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="field-help">{imagePipelineNote}</p>
+            </Field>
 
             <Field label="이미지 생성 범위">
               <select value={options.imageScope} onChange={(event) => updateOption("imageScope", event.target.value as CardnewsOptions["imageScope"])}>
