@@ -12,5 +12,6 @@ node_modules/
 out/
 *.tsbuildinfo
 *.log
+logs/
 
 .vercel

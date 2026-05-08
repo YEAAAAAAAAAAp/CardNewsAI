@@ -8,6 +8,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "smoke": "node scripts/smoke-test.mjs",
+    "ralph": "node scripts/ralph-loop.mjs",
     "lint": "next lint"
   },
   "dependencies": {
