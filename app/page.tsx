@@ -289,13 +289,13 @@ export default function HomePage() {
             <div className="model-grid">
               <label className={options.imageModel === "pro" ? "model-card active" : "model-card"}>
                 <input type="radio" checked={options.imageModel === "pro"} onChange={() => updateOption("imageModel", "pro")} />
-                <strong>Nano Banana Pro</strong>
-                <span>고품질 실무 산출물용. 복잡한 비주얼 지시를 더 잘 따릅니다.</span>
+                <strong>고품질 이미지</strong>
+                <span>완성도 높은 카드 배경을 우선합니다. 디테일한 비주얼 지시에 적합해요.</span>
               </label>
               <label className={options.imageModel === "fast" ? "model-card active" : "model-card"}>
                 <input type="radio" checked={options.imageModel === "fast"} onChange={() => updateOption("imageModel", "fast")} />
-                <strong>Nano Banana</strong>
-                <span>빠른 초안과 대량 생성용. 비용과 속도에 유리합니다.</span>
+                <strong>빠른 이미지</strong>
+                <span>초안을 빠르게 확인할 때 적합합니다. 속도를 우선해요.</span>
               </label>
             </div>
 
@@ -368,7 +368,7 @@ export default function HomePage() {
               <span>Preview</span>
               <strong>8-slide carousel</strong>
             </div>
-            <p>{options.imageScope === "off" ? "이미지 생성 꺼짐" : options.imageModel === "pro" ? "Nano Banana Pro" : "Nano Banana"}</p>
+            <p>{options.imageScope === "off" ? "이미지 생성 꺼짐" : options.imageModel === "pro" ? "고품질 이미지" : "빠른 이미지"}</p>
           </div>
 
           <div className="brief-strip">

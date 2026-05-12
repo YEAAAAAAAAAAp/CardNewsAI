@@ -1,9 +1,64 @@
+import { spawn, spawnSync } from "node:child_process";
+
 const baseUrl = process.env.SMOKE_BASE_URL || "http://127.0.0.1:3000";
+const shouldManageServer = !process.env.SMOKE_BASE_URL;
+const bypassToken = process.env.SMOKE_VERCEL_BYPASS_TOKEN;
+
+let devServer;
+let failed = false;
+
+async function ensureServer() {
+  if (await isServerReady()) return;
+  if (!shouldManageServer) {
+    throw new Error(`Smoke server is not reachable at ${baseUrl}. Start the app or set SMOKE_BASE_URL to a running deployment.`);
+  }
+
+  const command = process.platform === "win32" ? "cmd.exe" : "npm";
+  const args = process.platform === "win32" ? ["/d", "/s", "/c", "npm.cmd run dev"] : ["run", "dev"];
+
+  devServer = spawn(command, args, {
+    env: { ...process.env, PORT: new URL(baseUrl).port || "3000" },
+    stdio: ["ignore", "pipe", "pipe"]
+  });
+
+  devServer.stdout.on("data", (chunk) => process.stdout.write(`[dev] ${chunk}`));
+  devServer.stderr.on("data", (chunk) => process.stderr.write(`[dev] ${chunk}`));
+
+  const deadline = Date.now() + 60000;
+  while (Date.now() < deadline) {
+    if (await isServerReady()) return;
+    await sleep(1000);
+  }
+
+  throw new Error(`Timed out waiting for dev server at ${baseUrl}`);
+}
+
+async function isServerReady() {
+  try {
+    const response = await fetch(baseUrl, {
+      headers: smokeHeaders(),
+      signal: AbortSignal.timeout(1500)
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+function stopServer() {
+  if (!devServer) return;
+  if (process.platform === "win32" && devServer.pid) {
+    spawnSync("taskkill.exe", ["/pid", String(devServer.pid), "/t", "/f"], { stdio: "ignore" });
+  } else {
+    devServer.kill();
+  }
+  devServer = undefined;
+}
 
 async function postJson(path, body) {
   const response = await fetch(`${baseUrl}${path}`, {
     method: "POST",
-    headers: { "content-type": "application/json; charset=utf-8" },
+    headers: smokeHeaders({ "content-type": "application/json; charset=utf-8" }),
     body: JSON.stringify(body)
   });
 
@@ -12,6 +67,11 @@ async function postJson(path, body) {
     throw new Error(`${path} failed: ${JSON.stringify(data)}`);
   }
   return data;
+}
+
+function smokeHeaders(headers = {}) {
+  if (!bypassToken) return headers;
+  return { ...headers, "x-vercel-protection-bypass": bypassToken };
 }
 
 function assertProject(project, label) {
@@ -24,6 +84,8 @@ function assertProject(project, label) {
 }
 
 async function main() {
+  await ensureServer();
+
   const project = await postJson("/api/generate", {
     topic: "실무자가 AI 카드뉴스를 빠르게 만드는 법",
     mode: "topic",
@@ -70,7 +132,16 @@ async function main() {
   );
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+main()
+  .catch((error) => {
+    failed = true;
+    console.error(error);
+  })
+  .finally(() => {
+    stopServer();
+    process.exit(failed ? 1 : 0);
+  });
